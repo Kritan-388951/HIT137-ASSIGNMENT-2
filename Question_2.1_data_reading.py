@@ -26,6 +26,9 @@ information would be to use a function with a For Loop and expect where the prob
 
 """
 
+import os
+import glob
+import pandas as pd
 
 DATA_DIR = "temperatures"   # folder containing stations_group_YYYY.csv
 OUTPUT_AVG = "average_temp.txt"
@@ -46,4 +49,50 @@ SEASON_ORDER = ["Summer", "Autumn", "Winter", "Spring"]  # output order
 
 ID_COLS = ["STATION_NAME", "STN_ID", "LAT", "LON"]
 
+def load_all_csvs(data_dir: str) -> pd.DataFrame:
+    """Load and vertically stack all station CSVs in long format."""
+    pattern = os.path.join(data_dir, "stations_group_*.csv")
+    files = sorted(glob.glob(pattern))
+    if not files:
+        raise FileNotFoundError(f"No files found matching {pattern}")
+
+    long_rows = []
+    for f in files:
+        
+        try:
+            year = int(os.path.basename(f).split("_")[-1].split(".")[0])
+        except Exception:
+            year = None
+
+        df = pd.read_csv(f)
+        # keep only known/expected columns
+        keep = [c for c in ID_COLS + MONTHS if c in df.columns]
+        missing_months = [m for m in MONTHS if m not in df.columns]
+        if missing_months:
+            # Not fatal; we’ll melt only the months that exist
+            pass
+
+        df = df[keep].copy()
+
+        
+        melt = df.melt(
+            id_vars=[c for c in ID_COLS if c in df.columns],
+            value_vars=[m for m in MONTHS if m in df.columns],
+            var_name="Month",
+            value_name="Temperature_C"
+        )
+
+        # attach year (optional, but may be useful)
+        melt["Year"] = year
+
+        # drop NaN temps
+        melt = melt.dropna(subset=["Temperature_C"])
+        long_rows.append(melt)
+
+    out = pd.concat(long_rows, ignore_index=True)
+    # enforce categorical month order (for any potential ordering)
+    out["Month"] = pd.Categorical(out["Month"], categories=MONTHS, ordered=True)
+   
+    out["Season"] = out["Month"].map(SEASON_MAP)
+    return out
 
