@@ -58,7 +58,7 @@ def load_all_csvs(data_dir: str) -> pd.DataFrame:
 
     long_rows = []
     for f in files:
-        
+        # infer year from filename if possible (not strictly required)
         try:
             year = int(os.path.basename(f).split("_")[-1].split(".")[0])
         except Exception:
@@ -74,7 +74,7 @@ def load_all_csvs(data_dir: str) -> pd.DataFrame:
 
         df = df[keep].copy()
 
-        
+        # melt months -> rows
         melt = df.melt(
             id_vars=[c for c in ID_COLS if c in df.columns],
             value_vars=[m for m in MONTHS if m in df.columns],
