@@ -31,6 +31,15 @@ I'll use the datetime package to make the output much more robust. the comments 
 Null data variable needs more work, but not the priority as it is handling the files as expected.
 Have not checked if this works for other files.
 Upgrade the warning system if a corrupted/ unknown files gets into the data files.
+
+Final Checks:
+Output OK.
+datetime OK.
+variables OK.
+
+Additonal Needs:
+pytest
+main that only calls other function
 """
 
 import os
